@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nav Drawer Demo – Curved Nested Connector</title>
+
+  <!-- Optional: load Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --accent: #35b8ff;
+      --bg-parent: #f5f7fa;
+      --bg-hover: #eef6ff;
+      --text-parent: #1d2733;
+      --text-child: #425466;
+      --branch: #cfd4db;
+      --lvl1-pad: 2.5rem;
+      --elbow: .75rem;
+    }
+
+    * { box-sizing:border-box; margin:0; padding:0; }
+
+    body { font-family: Inter, Roboto, sans-serif; background:#fff; }
+
+    .drawer {
+      width:260px;
+      border-right:1px solid #e4e7ec;
+      border-radius:14px;
+      box-shadow:0 8px 20px rgba(0,0,0,.06);
+      overflow:hidden;
+    }
+
+    .parent { border-bottom:1px solid #f0f1f3; }
+
+    .parent-toggle {
+      display:flex; align-items:center; width:100%;
+      padding:.75rem 1.25rem; background:var(--bg-parent);
+      border:none; cursor:pointer; font-size:.875rem; font-weight:600;
+      text-transform:uppercase; letter-spacing:.04em; color:var(--text-parent);
+    }
+    .parent-toggle .icon { width:1.25rem; display:inline-flex; margin-right:.75rem; font-size:1rem; }
+    .parent-toggle:hover { background:#edf1f7; }
+    .parent-toggle::after { content:"▼"; margin-left:auto; font-size:.75rem; transition:transform .2s; }
+    .parent.open .parent-toggle::after { transform:rotate(180deg); }
+
+    .child-list {
+      list-style:none; overflow:hidden; max-height:0;
+      transition:max-height .25s ease; position:relative; padding-left:0;
+    }
+    .parent.open .child-list { max-height:600px; }
+
+    .child-list::before {
+      content:""; position:absolute; left:.75rem; top:0; bottom:0;
+      width:1px; background:var(--branch); z-index:3;
+    }
+
+    .child-list > li > a::before {
+      content:""; position:absolute; left:.75rem; top:50%;
+      width:var(--elbow); height:1px; background:var(--branch);
+      transform:translateY(-50%); border-top-right-radius:2px; z-index:4;
+    }
+
+    .child-list a {
+      display:flex; align-items:center;
+      padding:.55rem 1.25rem .55rem var(--lvl1-pad);
+      font-size:.875rem; color:var(--text-child);
+      text-decoration:none; border-radius:6px; transition:background 120ms;
+      position:relative; z-index:2;
+    }
+    .child-list a .icon { width:1.25rem; margin-right:.5rem; font-size:.95rem; }
+    .child-list a:hover { background:var(--bg-hover); }
+    .child-list a.active,
+    .child-list a[aria-current="page"] { color:var(--accent); font-weight:600; }
+
+    .has-nested > .grandchild-list {
+      list-style:none; margin:.25rem 0 0; padding-left:0; position:relative;
+    }
+    .has-nested > .grandchild-list::before {
+      content:""; position:absolute;
+      left:calc(var(--lvl1-pad) + .5rem); top:0; bottom:0;
+      width:1px; background:var(--branch); z-index:2;
+    }
+
+    .grandchild-list > li { position:relative; }
+    .grandchild-list > li::before {
+      content:""; position:absolute;
+      left:calc(var(--lvl1-pad) + .5rem); top:0;
+      width:15px; height:20px; border:1px solid var(--branch);
+      border-top:none; border-right:none;
+      border-radius:0 0 0 14px; z-index:1;
+    }
+
+    .grandchild-list a {
+      display:flex; align-items:center;
+      padding:.5rem 1rem .5rem calc(var(--lvl1-pad) + var(--elbow) + 1.25rem);
+      font-size:.82rem; color:var(--text-child);
+      text-decoration:none; border-radius:6px; transition:background 120ms;
+      position:relative; z-index:2; left:5px;
+    }
+    .grandchild-list a .icon { width:1.1rem; margin-right:.45rem; font-size:.85rem; }
+    .grandchild-list a:hover { background:var(--bg-hover); }
+
+    @media(max-width:600px) { .drawer { width:210px; } }
+  </style>
+</head>
+<body>
+
+  <nav class="drawer">
+    <div class="parent open">
+      <button class="parent-toggle" aria-expanded="true">
+        <span class="icon">💡</span>
+        <span class="parent-label">Intelligence</span>
+      </button>
+      <ul class="child-list">
+        <li><a href="#"><span class="icon">📂</span>Link&nbsp;1</a></li>
+        <li><a href="#"><span class="icon">🚀</span>Link&nbsp;2</a></li>
+      </ul>
+    </div>
+
+    <div class="parent open">
+      <button class="parent-toggle" aria-expanded="true">
+        <span class="icon">🛡️</span>
+        <span class="parent-label">Enforcement</span>
+      </button>
+      <ul class="child-list">
+        <li class="has-nested">
+          <a href="#"><span class="icon">🛡️</span>Link&nbsp;1</a>
+          <ul class="grandchild-list">
+            <li><a href="#"><span class="icon">🔧</span>Child&nbsp;Link&nbsp;1</a></li>
+            <li><a href="#"><span class="icon">🔧</span>Child&nbsp;Link&nbsp;2</a></li>
+          </ul>
+        </li>
+        <li><a href="#"><span class="icon">🧪</span>Link&nbsp;2</a></li>
+        <li><a class="active" href="#" aria-current="page"><span class="icon">🚦</span>Link&nbsp;3</a></li>
+      </ul>
+    </div>
+
+    <div class="parent open">
+      <button class="parent-toggle" aria-expanded="true">
+        <span class="icon">🔍</span>
+        <span class="parent-label">Analysis</span>
+      </button>
+      <ul class="child-list">
+        <li><a href="#"><span class="icon">📊</span>Link&nbsp;1</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <script>
+    document.querySelectorAll('.parent-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const parent = btn.closest('.parent');
+        const isOpen = parent.classList.toggle('open');
+        btn.setAttribute('aria-expanded', isOpen);
+      });
+    });
+  </script>
+
+</body>
+</html>
