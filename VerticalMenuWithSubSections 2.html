@@ -1,0 +1,966 @@
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collapsible Sidebar Navigation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        :root {
+            --bg-dark: #0C0C35;
+            --bg-darker: #141414;
+            --bg-darkest: #0a0a0a;
+            --text-light: #ffffff;
+            --text-muted: #a0a0a0;
+            --accent-blue: #1a73e8;
+            --badge-green: #4ade80;
+            --badge-orange: #ffa07a;
+            --badge-red: #ff6b6b;
+            --badge-purple: #a78bfa;
+            --border-color: #333333;
+            --hover-bg: #2e2c75;
+            --line-color: #333333;
+            --sidebar-width: 280px;
+            --sidebar-collapsed-width: 100px; /* Increased from 80px to 100px */
+            --transition-speed: 0.3s;
+        }
+
+        body {
+            background-color: #4a5568;
+            color: var(--text-light);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            overflow: visible !important;
+        }
+
+        .app-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            height: 90vh;
+            display: flex;
+            border-radius: 10px;
+            overflow: visible !important; /* Force visible overflow */
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100%;
+            background-color: var(--bg-dark);
+            overflow-y: auto;
+            overflow-x: visible !important; /* Force visible overflow */
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            transition: width var(--transition-speed) ease;
+        }
+
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+            overflow-x: hidden; /* Hide horizontal overflow in collapsed state */
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            overflow: visible !important;
+        }
+
+        .logo {
+            width: 48px;
+            height: 48px;
+            background-color: var(--text-light);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .logo-circle {
+            width: 20px;
+            height: 20px;
+            background-color: var(--bg-dark);
+            border-radius: 50%;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+
+        .toggle-btn:hover {
+            background-color: var(--hover-bg);
+        }
+
+        .toggle-btn svg {
+            transition: transform var(--transition-speed) ease;
+        }
+
+        .sidebar.collapsed .toggle-btn svg {
+            transform: rotate(180deg);
+        }
+
+        /* Menu Styles */
+        .sidebar-menu {
+            list-style: none;
+            padding: 10px 0;
+            flex-grow: 1;
+            overflow: visible !important; /* Force visible overflow */
+        }
+
+        .menu-item {
+            position: relative;
+            overflow: visible !important;
+        }
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: var(--text-light);
+            text-decoration: none;
+            transition: background-color 0.2s ease;
+            position: relative;
+            overflow: visible !important;
+        }
+
+        .menu-link:hover {
+            background-color: var(--hover-bg);
+        }
+
+        .menu-icon {
+            min-width: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-text {
+            flex-grow: 1;
+            white-space: nowrap;
+            opacity: 1;
+            transition: opacity var(--transition-speed) ease;
+        }
+
+        .sidebar.collapsed .menu-text {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+        }
+
+        .submenu-icon {
+            margin-left: 10px;
+            transition: transform 0.3s ease, opacity var(--transition-speed) ease;
+        }
+
+        .sidebar.collapsed .submenu-icon {
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+        }
+
+        .menu-item.active > .menu-link .submenu-icon {
+            transform: rotate(180deg);
+        }
+
+        .badge {
+            min-width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+            transition: margin var(--transition-speed) ease;
+        }
+
+        .sidebar.collapsed .badge {
+            margin-left: auto;
+            margin-right: 0;
+        }
+
+        .green {
+            background-color: var(--badge-green);
+            color: #000;
+        }
+
+        .orange {
+            background-color: var(--badge-orange);
+            color: #000;
+        }
+
+        .red {
+            background-color: var(--badge-red);
+            color: #fff;
+        }
+
+        .purple {
+            background-color: var(--badge-purple);
+            color: #fff;
+        }
+
+        /* Submenu Styles with Line Design - EXPANDED STATE */
+        .submenu {
+            list-style: none;
+            background-color: var(--bg-darker);
+            overflow: hidden; /* Allow overflow for animation */
+            max-height: 0; /* Start with 0 height */
+            transition: max-height 0.3s ease; /* Animate max-height */
+            border-radius: 4px;
+            position: relative;
+            opacity: 0; /* Start with 0 opacity */
+            visibility: hidden; /* Start hidden */
+            transition: max-height 0.3s ease, opacity 0.2s ease, visibility 0s 0.3s; /* Combined transitions */
+        }
+
+        /* Vertical line for submenu */
+        .submenu::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 30px;
+            height: 100%;
+            width: 1px;
+            background-color: #48FF2A;
+        }
+
+        /* Only show submenu in expanded state when active */
+        .sidebar:not(.collapsed) .menu-item.active > .submenu {
+            max-height: 500px; /* Expanded height */
+            padding: 8px 0;
+            opacity: 1; /* Full opacity when active */
+            visibility: visible; /* Visible when active */
+            transition: max-height 0.3s ease, opacity 0.2s ease; /* No delay for visibility */
+        }
+
+        .submenu-item {
+            position: relative;
+            overflow: visible !important; /* Force visible overflow */
+        }
+
+        /* Curved line connecting to vertical line */
+        .submenu-item::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 30px;
+            width: 10px;
+            height: 8px;
+            border-left: 1px solid #48FF2A;
+            border-bottom: 1px solid #48FF2A;
+            border-bottom-left-radius: 5px;
+            background-color: transparent;
+            transform: translateY(-4px);
+        }
+
+        .submenu-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: color 0.2s ease;
+            padding: 10px 20px 10px 50px; /* Increased left padding for the line */
+            cursor: pointer;
+            overflow: visible !important;
+        }
+
+        .submenu-link:hover {
+            color: var(--text-light);
+            background-color: var(--hover-bg);
+        }
+
+        .arrow-icon {
+            margin-left: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        /* Point arrow right for flyout menu */
+        /*.submenu-item.has-grandchild > .submenu-link .arrow-icon svg {
+            transform: rotate(-90deg);
+        }*/
+
+        /* Grandchild Menu Styles - FLYOUT STYLE */
+        .grandchild-menu {
+            list-style: none;
+            background-color: var(--bg-darkest);
+            border-radius: 4px;
+            width: 220px;
+            position: fixed !important; /* Changed to fixed positioning */
+            left: auto !important; /* Reset left positioning */
+            margin-left: 232px !important; /* Position relative to sidebar width */
+            top: auto !important; /* Reset top positioning */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 9999 !important; /* Very high z-index */
+            padding: 8px 0;
+        }
+
+        /* Show grandchild menu when parent is active */
+        .submenu-item.active > .grandchild-menu {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Vertical line for grandchild menu */
+        .grandchild-menu::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 20px;
+            height: 100%;
+            width: 1px;
+            background-color: #48FF2A;
+        }
+
+        .grandchild-item {
+            padding: 0;
+            position: relative;
+        }
+
+        /* Curved line connecting to vertical line for grandchild items */
+        .grandchild-item::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 20px;
+            width: 10px;
+            height: 8px;
+            border-left: 1px solid #48FF2A;
+            border-bottom: 1px solid #48FF2A;
+            border-bottom-left-radius: 5px;
+            background-color: transparent;
+            transform: translateY(-4px);
+        }
+
+        .grandchild-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px 10px 40px; /* Adjusted padding for flyout style */
+        }
+
+        .grandchild-link:hover {
+            color: var(--text-light);
+            background-color: var(--hover-bg);
+        }
+
+        /* COLLAPSED STATE - Flyout Submenus */
+        .collapsed-submenu {
+            list-style: none;
+            background-color: var(--bg-darker);
+            border-radius: 4px;
+            width: 220px;
+            position: fixed !important;
+            left: 0;
+            top: auto !important;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 9999 !important;
+            padding: 8px 0;
+        }
+
+        /* Show collapsed submenu when parent is hovered in collapsed state */
+        .sidebar.collapsed .menu-item:hover > .collapsed-submenu {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Vertical line for collapsed submenu */
+        .collapsed-submenu::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 20px;
+            height: 100%;
+            width: 1px;
+            background-color: var(--line-color);
+        }
+
+        .collapsed-submenu-item {
+            position: relative;
+        }
+
+        /* Curved line connecting to vertical line */
+        .collapsed-submenu-item::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 20px;
+            width: 10px;
+            height: 8px;
+            border-left: 1px solid var(--line-color);
+            border-bottom: 1px solid var(--line-color);
+            border-bottom-left-radius: 5px;
+            background-color: transparent;
+            transform: translateY(-4px);
+        }
+
+        .collapsed-submenu-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: color 0.2s ease;
+            padding: 10px 20px 10px 40px;
+            cursor: pointer;
+        }
+
+        .collapsed-submenu-link:hover {
+            color: var(--text-light);
+            background-color: var(--hover-bg);
+        }
+
+        /* Point arrow right for collapsed grandchild menu */
+        /*.collapsed-submenu-item.has-grandchild > .collapsed-submenu-link .arrow-icon svg {
+            transform: rotate(-90deg);
+        }
+
+        /* Fix caret orientation in collapsed state */
+        /*.sidebar.collapsed .collapsed-submenu-item.has-grandchild > .collapsed-submenu-link .arrow-icon svg {
+            transform: rotate(-90deg);
+        }*/
+
+        /* Collapsed Grandchild Menu Styles */
+        .collapsed-grandchild-menu {
+            list-style: none;
+            background-color: var(--bg-darkest);
+            border-radius: 4px;
+            width: 220px;
+            position: fixed !important;
+            left: 0;
+            top: auto !important;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 9999 !important;
+            padding: 8px 0;
+        }
+
+        /* Show collapsed grandchild menu when parent is hovered */
+        .sidebar.collapsed .collapsed-submenu-item.has-grandchild:hover > .collapsed-grandchild-menu {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Vertical line for collapsed grandchild menu */
+        .collapsed-grandchild-menu::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 20px;
+            height: 100%;
+            width: 1px;
+            background-color: var(--line-color);
+        }
+
+        .collapsed-grandchild-item {
+            padding: 0;
+            position: relative;
+        }
+
+        /* Curved line connecting to vertical line for collapsed grandchild items */
+        .collapsed-grandchild-item::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 20px;
+            width: 10px;
+            height: 8px;
+            border-left: 1px solid var(--line-color);
+            border-bottom: 1px solid var(--line-color);
+            border-bottom-left-radius: 5px;
+            background-color: transparent;
+            transform: translateY(-4px);
+        }
+
+        .collapsed-grandchild-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px 10px 40px;
+        }
+
+        .collapsed-grandchild-link:hover {
+            color: var(--text-light);
+            background-color: var(--hover-bg);
+        }
+
+        /* Active Menu Item */
+        .menu-item.active > .menu-link {
+            background-color: var(--hover-bg);
+        }
+
+        /* Visual indicator for active submenu item */
+        .submenu-item.active > .submenu-link {
+            background-color: var(--hover-bg);
+            color: var(--text-light);
+        }
+
+        /* Content area */
+        .content-area {
+            flex: 1;
+            background-color: #2d3748;
+            padding: 20px;
+            overflow-y: auto;
+            overflow-x: visible !important;
+            transition: margin-left var(--transition-speed) ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-circle"></div>
+                </div>
+                <button class="toggle-btn" id="toggle-sidebar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li class="menu-item">
+                    <a href="#" class="menu-link">
+                        <span class="menu-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            </svg>
+                        </span>
+                        <span class="menu-text">Dashboard</span>
+                    </a>
+                </li>
+                
+                <li class="menu-item has-submenu" id="audience-menu-item">
+                    <a href="#" class="menu-link">
+                        <span class="menu-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </span>
+                        <span class="menu-text">Audience</span>
+                        <span class="submenu-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </span>
+                    </a>
+                    <!-- Regular submenu for expanded state -->
+                    <ul class="submenu">
+                        <li class="submenu-item">
+                            <a href="#" class="submenu-link">Users</a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="#" class="submenu-link">Groups</a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="#" class="submenu-link">Analytics</a>
+                        </li>
+                    </ul>
+                    <!-- Flyout submenu for collapsed state -->
+                    <ul class="collapsed-submenu" id="audience-collapsed-submenu">
+                        <li class="collapsed-submenu-item">
+                            <a href="#" class="collapsed-submenu-link">Users</a>
+                        </li>
+                        <li class="collapsed-submenu-item">
+                            <a href="#" class="collapsed-submenu-link">Groups</a>
+                        </li>
+                        <li class="collapsed-submenu-item">
+                            <a href="#" class="collapsed-submenu-link">Analytics</a>
+                        </li>
+                    </ul>
+                </li>
+                
+                <li class="menu-item">
+                    <a href="#" class="menu-link">
+                        <span class="menu-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        </span>
+                        <span class="menu-text">Posts</span>
+                        <span class="badge green">8</span>
+                    </a>
+                </li>
+                
+                <li class="menu-item has-submenu active" id="income-menu-item">
+                    <a href="#" class="menu-link" data-submenu="income-submenu">
+                        <span class="menu-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="16"></line>
+                                <line x1="8" y1="12" x2="16" y2="12"></line>
+                            </svg>
+                        </span>
+                        <span class="menu-text">Income</span>
+                        <span class="submenu-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </span>
+                    </a>
+                    <!-- Regular submenu for expanded state -->
+                    <ul class="submenu" id="income-submenu">
+                        <li class="submenu-item">
+                            <a href="#" class="submenu-link">Earnings</a>
+                        </li>
+                        <li class="submenu-item has-grandchild" id="refunds-submenu-item">
+                            <!-- Changed to div to prevent navigation -->
+                            <div class="submenu-link">
+                                Refunds
+                                <span class="arrow-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </span>
+                            </div>
+                            <ul class="grandchild-menu" id="refunds-grandchild" style="top: 393.379px; left: 948.858px;">
+                                <li class="grandchild-item">
+                                    <a href="#" class="grandchild-link">
+                                        Pending Refunds
+                                        <span class="badge red">5</span>
+                                    </a>
+                                </li>
+                                <li class="grandchild-item">
+                                    <a href="#" class="grandchild-link">
+                                        Processed Refunds
+                                        <span class="badge green">12</span>
+                                    </a>
+                                </li>
+                                <li class="grandchild-item">
+                                    <a href="#" class="grandchild-link">
+                                        Denied Refunds
+                                    </a>
+                                </li>
+                                <li class="grandchild-item">
+                                    <a href="#" class="grandchild-link">
+                                        Refund Reports
+                                    </a>
+                                </li>
+                                <li class="grandchild-item">
+                                    <a href="#" class="grandchild-link">
+                                        Automated Refunds
+                                        <span class="badge purple">New</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="#" class="submenu-link">Declines</a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="#" class="submenu-link">Payouts</a>
+                        </li>
+                    </ul>
+                    <!-- Flyout submenu for collapsed state -->
+                    <ul class="collapsed-submenu" id="income-collapsed-submenu">
+                        <li class="collapsed-submenu-item">
+                            <a href="#" class="collapsed-submenu-link">Earnings</a>
+                        </li>
+                        <li class="collapsed-submenu-item has-grandchild" id="refunds-collapsed-submenu-item">
+                            <div class="collapsed-submenu-link">
+                                Refunds
+                                <span class="arrow-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </span>
+                            </div>
+                            <ul class="collapsed-grandchild-menu" id="refunds-collapsed-grandchild">
+                                <li class="collapsed-grandchild-item">
+                                    <a href="#" class="collapsed-grandchild-link">
+                                        Pending Refunds
+                                        <span class="badge red">5</span>
+                                    </a>
+                                </li>
+                                <li class="collapsed-grandchild-item">
+                                    <a href="#" class="collapsed-grandchild-link">
+                                        Processed Refunds
+                                        <span class="badge green">12</span>
+                                    </a>
+                                </li>
+                                <li class="collapsed-grandchild-item">
+                                    <a href="#" class="collapsed-grandchild-link">
+                                        Denied Refunds
+                                        <span class="badge orange">3</span>
+                                    </a>
+                                </li>
+                                <li class="collapsed-grandchild-item">
+                                    <a href="#" class="collapsed-grandchild-link">
+                                        Refund Reports
+                                    </a>
+                                </li>
+                                <li class="collapsed-grandchild-item">
+                                    <a href="#" class="collapsed-grandchild-link">
+                                        Automated Refunds
+                                        <span class="badge purple">New</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="collapsed-submenu-item">
+                            <a href="#" class="collapsed-submenu-link">Declines</a>
+                        </li>
+                        <li class="collapsed-submenu-item">
+                            <a href="#" class="collapsed-submenu-link">Payouts</a>
+                        </li>
+                    </ul>
+                </li>
+                
+                <li class="menu-item has-submenu" id="promote-menu-item">
+                    <a href="#" class="menu-link">
+                        <span class="menu-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                        </span>
+                        <span class="menu-text">Promote</span>
+                        <span class="submenu-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </span>
+                    </a>
+                    <!-- Regular submenu for expanded state -->
+                    <ul class="submenu">
+                        <li class="submenu-item">
+                            <a href="#" class="submenu-link">Campaigns</a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="#" class="submenu-link">Ads</a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="#" class="submenu-link">Analytics</a>
+                        </li>
+                    </ul>
+                    <!-- Flyout submenu for collapsed state -->
+                    <ul class="collapsed-submenu" id="promote-collapsed-submenu">
+                        <li class="collapsed-submenu-item">
+                            <a href="#" class="collapsed-submenu-link">Campaigns</a>
+                        </li>
+                        <li class="collapsed-submenu-item">
+                            <a href="#" class="collapsed-submenu-link">Ads</a>
+                        </li>
+                        <li class="collapsed-submenu-item">
+                            <a href="#" class="collapsed-submenu-link">Analytics</a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+            
+        </nav>
+        
+        <div class="content-area">
+            <!-- Content goes here -->
+            <h1>Dashboard Content</h1>
+            <p style="margin-top: 20px;">Click on the toggle button in the top right of the sidebar to collapse/expand it.</p>
+            <p style="margin-top: 10px;">In collapsed mode, hover over menu items to see flyout menus.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle sidebar collapse
+            const toggleBtn = document.getElementById('toggle-sidebar');
+            const sidebar = document.querySelector('.sidebar');
+            
+            toggleBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('collapsed');
+            });
+            
+            // Remove any active classes on page load
+            document.querySelectorAll('.menu-item.active').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.submenu-item.active').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            const menuItems = document.querySelectorAll('.menu-item.has-submenu');
+            
+            // Toggle main menu items in expanded state
+            menuItems.forEach(item => {
+                const link = item.querySelector('.menu-link');
+                
+                link.addEventListener('click', function(e) {
+                    e.preventDefault(); // Prevent default action
+                    
+                    // Only toggle if sidebar is not collapsed
+                    if (!sidebar.classList.contains('collapsed')) {
+                        // If this item is already active, just close it
+                        if (item.classList.contains('active')) {
+                            item.classList.remove('active');
+                        } else {
+                            // Close any open submenus
+                            menuItems.forEach(i => i.classList.remove('active'));
+                            // Open this submenu
+                            item.classList.add('active');
+                        }
+                    }
+                });
+            });
+            
+            // Toggle submenu items with grandchild menus
+            const submenuItemsWithGrandchild = document.querySelectorAll('.submenu-item.has-grandchild');
+            
+            submenuItemsWithGrandchild.forEach(item => {
+                const link = item.querySelector('.submenu-link');
+                
+                link.addEventListener('click', function(e) {
+                    e.preventDefault(); // Prevent default action
+                    e.stopPropagation(); // Stop event from bubbling up
+                    console.log('Refunds clicked');
+                    
+                    // Toggle active class
+                    item.classList.toggle('active');
+                    
+                    // Position the grandchild menu correctly
+                    const grandchildMenu = item.querySelector('.grandchild-menu');
+                    if (grandchildMenu) {
+                        // Get the position of the submenu item
+                        const rect = item.getBoundingClientRect();
+                        // Position the grandchild menu next to the submenu item
+                        grandchildMenu.style.top = rect.top + 'px';
+                        grandchildMenu.style.left = (rect.right + 5) + 'px'; // 5px offset
+                    }
+                    
+                    // Close other active submenu items
+                    submenuItemsWithGrandchild.forEach(otherItem => {
+                        if (otherItem !== item && otherItem.classList.contains('active')) {
+                            otherItem.classList.remove('active');
+                        }
+                    });
+                });
+            });
+            
+            // Position collapsed submenus on hover
+            const collapsedMenuItems = document.querySelectorAll('.menu-item.has-submenu');
+
+            collapsedMenuItems.forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                    if (sidebar.classList.contains('collapsed')) {
+                        const collapsedSubmenu = item.querySelector('.collapsed-submenu');
+                        if (collapsedSubmenu) {
+                            const rect = item.getBoundingClientRect();
+                            collapsedSubmenu.style.top = rect.top + 'px';
+                            // Ensure the submenu appears to the right
+                            collapsedSubmenu.style.left = (rect.right + 5) + 'px';
+                        }
+                    }
+                });
+            });
+            
+            // Position collapsed grandchild menus on hover
+            const collapsedSubmenuItemsWithGrandchild = document.querySelectorAll('.collapsed-submenu-item.has-grandchild');
+
+            collapsedSubmenuItemsWithGrandchild.forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                    const collapsedGrandchildMenu = item.querySelector('.collapsed-grandchild-menu');
+                    if (collapsedGrandchildMenu) {
+                        const rect = item.getBoundingClientRect();
+                        collapsedGrandchildMenu.style.top = rect.top + 'px';
+                        // Ensure the grandchild menu appears to the right
+                        collapsedGrandchildMenu.style.left = (rect.right + 5) + 'px';
+                    }
+                });
+            });
+            
+            // Close flyout menu when clicking outside
+            document.addEventListener('click', function(e) {
+                // Check if the click is outside the submenu items
+                if (!e.target.closest('.submenu-item.has-grandchild')) {
+                    submenuItemsWithGrandchild.forEach(item => {
+                        item.classList.remove('active');
+                    });
+                }
+            });
+            
+            // Prevent clicks on grandchild menu from closing the menu
+            const grandchildMenus = document.querySelectorAll('.grandchild-menu');
+            grandchildMenus.forEach(menu => {
+                menu.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent event from bubbling up
+                });
+            });
+            
+            
+            
+            // Set Audience menu as active by default (for demo purposes)
+            const audienceMenuItem = document.getElementById('audience-menu-item');
+            if (audienceMenuItem) {
+                audienceMenuItem.classList.add('active');
+            }
+            
+            // Update position of menus on window resize
+            window.addEventListener('resize', function() {
+                // Update position of grandchild menus
+                const activeSubmenuItems = document.querySelectorAll('.submenu-item.has-grandchild.active');
+                activeSubmenuItems.forEach(item => {
+                    const grandchildMenu = item.querySelector('.grandchild-menu');
+                    if (grandchildMenu) {
+                        const rect = item.getBoundingClientRect();
+                        grandchildMenu.style.top = rect.top + 'px';
+                        grandchildMenu.style.left = (rect.right + 5) + 'px';
+                    }
+                });
+                
+                // Update position of collapsed submenus
+                if (sidebar.classList.contains('collapsed')) {
+                    collapsedMenuItems.forEach(item => {
+                        const collapsedSubmenu = item.querySelector('.collapsed-submenu');
+                        if (collapsedSubmenu && window.getComputedStyle(collapsedSubmenu).visibility === 'visible') {
+                            const rect = item.getBoundingClientRect();
+                            collapsedSubmenu.style.top = rect.top + 'px';
+                            collapsedSubmenu.style.left = (rect.right + 5) + 'px';
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+
+
+</body></html>
